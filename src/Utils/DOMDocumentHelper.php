@@ -37,7 +37,7 @@ final class DOMDocumentHelper
         libxml_use_internal_errors(true);
 
         // Remove LIBXML_HTML_NOIMPLIED to prevent nested nodes bug on fragments
-        $loaded = $dom->loadHTML($encodedHtml);
+        $loaded = $dom->loadHTML($encodedHtml, LIBXML_NONET);
         
         $errors = libxml_get_errors();
         foreach ($errors as $error) {

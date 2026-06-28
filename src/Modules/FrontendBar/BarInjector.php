@@ -136,29 +136,29 @@ final class BarInjector
 
         $html  = sprintf(
             '<div id="jinc-a11y-bar" class="%s" role="region" aria-label="Barra de Acessibilidade" data-layout="%s" data-position="%s">',
-            trim('jinc-bar ' . $icons_class),
-            htmlspecialchars($layout, ENT_QUOTES, 'UTF-8'),
-            htmlspecialchars($position, ENT_QUOTES, 'UTF-8')
+            esc_attr(trim('jinc-bar ' . $icons_class)),
+            esc_attr($layout),
+            esc_attr($position)
         );
         $html .= '<nav aria-label="Controles de Acessibilidade">';
 
         // 1. Skip-to-content link
         $html .= '<a href="#main" id="jinc-skip-link" class="jinc-bar-btn">';
-        $html .= 'Ir para o conteúdo principal';
+        $html .= esc_html('Ir para o conteúdo principal');
         $html .= '</a>';
 
         // 2. Toggle High Contrast
         $html .= '<button type="button" id="jinc-toggle-contrast" class="jinc-bar-btn" ';
         $html .= 'aria-pressed="false">';
         $html .= '<span class="dashicons dashicons-visibility jinc-bar-icon" aria-hidden="true"></span> ';
-        $html .= 'Alternar contraste';
+        $html .= esc_html('Alternar contraste');
         $html .= '</button>';
 
         // 3. Toggle Font Size
         $html .= '<button type="button" id="jinc-toggle-fontsize" class="jinc-bar-btn" ';
         $html .= 'aria-pressed="false">';
         $html .= '<span class="dashicons dashicons-editor-textcolor jinc-bar-icon" aria-hidden="true"></span> ';
-        $html .= 'Alternar tamanho da fonte';
+        $html .= esc_html('Alternar tamanho da fonte');
         $html .= '</button>';
 
         $html .= '</nav>';

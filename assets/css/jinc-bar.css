@@ -48,35 +48,35 @@ html.jinc-high-contrast body {
   color: #ffffff !important;
 }
 
-html.jinc-high-contrast *:not(#jinc-a11y-bar):not(#jinc-a11y-bar *) {
+html.jinc-high-contrast *:not(.jinc-a11y-wrapper):not(.jinc-a11y-wrapper *) {
   color: #ffffff !important;
   border-color: #ffffff !important;
 }
 
 /* ── Typography & Links ── */
 
-html.jinc-high-contrast a:not(#jinc-a11y-bar a),
-html.jinc-high-contrast a:visited:not(#jinc-a11y-bar a) {
+html.jinc-high-contrast a:not(.jinc-a11y-wrapper a),
+html.jinc-high-contrast a:visited:not(.jinc-a11y-wrapper a) {
   color: #ffff00 !important;
   text-decoration: underline !important;
 }
 
-html.jinc-high-contrast a:hover:not(#jinc-a11y-bar a),
-html.jinc-high-contrast a:focus:not(#jinc-a11y-bar a) {
+html.jinc-high-contrast a:hover:not(.jinc-a11y-wrapper a),
+html.jinc-high-contrast a:focus:not(.jinc-a11y-wrapper a) {
   color: #00ffff !important;
   outline: 2px solid #ffff00 !important;
 }
 
 /* ── Backgrounds: Headers, Sections, Divs, Cards ── */
 
-html.jinc-high-contrast header:not(#jinc-a11y-bar),
-html.jinc-high-contrast footer:not(#jinc-a11y-bar),
+html.jinc-high-contrast header:not(.jinc-a11y-wrapper),
+html.jinc-high-contrast footer:not(.jinc-a11y-wrapper),
 html.jinc-high-contrast main,
 html.jinc-high-contrast article,
 html.jinc-high-contrast section,
 html.jinc-high-contrast aside,
-html.jinc-high-contrast nav:not(#jinc-a11y-bar nav),
-html.jinc-high-contrast div:not(#jinc-a11y-bar):not(#jinc-a11y-bar div),
+html.jinc-high-contrast nav:not(.jinc-a11y-wrapper nav),
+html.jinc-high-contrast div:not(.jinc-a11y-wrapper):not(.jinc-a11y-wrapper div),
 html.jinc-high-contrast figure,
 html.jinc-high-contrast blockquote,
 html.jinc-high-contrast pre,
@@ -93,9 +93,9 @@ html.jinc-high-contrast summary {
 
 /* ── Headings ── */
 
-html.jinc-high-contrast h1:not(#jinc-a11y-bar h1),
-html.jinc-high-contrast h2:not(#jinc-a11y-bar h2),
-html.jinc-high-contrast h3:not(#jinc-a11y-bar h3),
+html.jinc-high-contrast h1:not(.jinc-a11y-wrapper h1),
+html.jinc-high-contrast h2:not(.jinc-a11y-wrapper h2),
+html.jinc-high-contrast h3:not(.jinc-a11y-wrapper h3),
 html.jinc-high-contrast h4,
 html.jinc-high-contrast h5,
 html.jinc-high-contrast h6 {
@@ -104,19 +104,19 @@ html.jinc-high-contrast h6 {
 
 /* ── Form Elements ── */
 
-html.jinc-high-contrast input:not(#jinc-a11y-bar input),
-html.jinc-high-contrast textarea:not(#jinc-a11y-bar textarea),
-html.jinc-high-contrast select:not(#jinc-a11y-bar select),
-html.jinc-high-contrast button:not(#jinc-a11y-bar button) {
+html.jinc-high-contrast input:not(.jinc-a11y-wrapper input),
+html.jinc-high-contrast textarea:not(.jinc-a11y-wrapper textarea),
+html.jinc-high-contrast select:not(.jinc-a11y-wrapper select),
+html.jinc-high-contrast button:not(.jinc-a11y-wrapper button) {
   background-color: #1a1a1a !important;
   color: #ffffff !important;
   border: 2px solid #ffffff !important;
 }
 
-html.jinc-high-contrast input:focus:not(#jinc-a11y-bar input),
-html.jinc-high-contrast textarea:focus:not(#jinc-a11y-bar textarea),
-html.jinc-high-contrast select:focus:not(#jinc-a11y-bar select),
-html.jinc-high-contrast button:focus:not(#jinc-a11y-bar button) {
+html.jinc-high-contrast input:focus:not(.jinc-a11y-wrapper input),
+html.jinc-high-contrast textarea:focus:not(.jinc-a11y-wrapper textarea),
+html.jinc-high-contrast select:focus:not(.jinc-a11y-wrapper select),
+html.jinc-high-contrast button:focus:not(.jinc-a11y-wrapper button) {
   outline: 3px solid #ffff00 !important;
   outline-offset: 2px;
 }
@@ -129,7 +129,7 @@ html.jinc-high-contrast img {
 
 /* ── Shadows & Gradients Removal ── */
 
-html.jinc-high-contrast *:not(#jinc-a11y-bar):not(#jinc-a11y-bar *) {
+html.jinc-high-contrast *:not(.jinc-a11y-wrapper):not(.jinc-a11y-wrapper *) {
   text-shadow: none !important;
   box-shadow: none !important;
   background-image: none !important;
@@ -137,9 +137,9 @@ html.jinc-high-contrast *:not(#jinc-a11y-bar):not(#jinc-a11y-bar *) {
 
 /* ── Table Borders ── */
 
-html.jinc-high-contrast table:not(#jinc-a11y-bar table),
-html.jinc-high-contrast th:not(#jinc-a11y-bar th),
-html.jinc-high-contrast td:not(#jinc-a11y-bar td) {
+html.jinc-high-contrast table:not(.jinc-a11y-wrapper table),
+html.jinc-high-contrast th:not(.jinc-a11y-wrapper th),
+html.jinc-high-contrast td:not(.jinc-a11y-wrapper td) {
   border: 1px solid #ffffff !important;
 }
 
@@ -161,7 +161,7 @@ html.jinc-large-font body {
 
 /* ── Bar Container ── */
 
-#jinc-a11y-bar {
+.jinc-a11y-wrapper {
   position: sticky;
   top: 0;
   z-index: 999999;
@@ -178,16 +178,31 @@ html.jinc-large-font body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+.jinc-a11y-wrapper[data-bar-size="small"] {
+  --jinc-bar-height: 40px;
+  --jinc-bar-font-size: 0.75rem;
+}
+.jinc-a11y-wrapper[data-bar-size="large"] {
+  --jinc-bar-height: 56px;
+  --jinc-bar-font-size: 1rem;
+}
+
 /* ── Nav Container ── */
 
-#jinc-a11y-bar nav {
+.jinc-a11y-wrapper nav {
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch; /* Força os filhos a terem a mesma altura */
+  align-items: center; /* keep items centered vertically */
   gap: 10px;
   max-width: 1200px;
   width: 100%;
   justify-content: var(--jinc-bar-align, center);
+}
+
+.jinc-bar-title {
+  font-weight: 700;
+  margin-right: auto;
+  font-size: 1.1em;
 }
 
 /* ── Buttons & Links (including skip link — ALWAYS VISIBLE) ── */
@@ -232,14 +247,14 @@ html.jinc-large-font body {
   font-weight: 600;
 }
 
-html.jinc-high-contrast #jinc-a11y-bar .jinc-bar-btn[aria-pressed="true"] {
+html.jinc-high-contrast .jinc-a11y-wrapper .jinc-bar-btn[aria-pressed="true"] {
     background-color: #ffff00 !important;
     color: #000000 !important; 
     border-color: #000000 !important;
 }
 
-html.jinc-high-contrast #jinc-a11y-bar .jinc-bar-btn:hover,
-html.jinc-high-contrast #jinc-a11y-bar .jinc-bar-btn:focus {
+html.jinc-high-contrast .jinc-a11y-wrapper .jinc-bar-btn:hover,
+html.jinc-high-contrast .jinc-a11y-wrapper .jinc-bar-btn:focus {
     background-color: #ffff00 !important;
     color: #000000 !important; 
     border-color: #000000 !important;
@@ -271,11 +286,11 @@ html.jinc-high-contrast #jinc-a11y-bar .jinc-bar-btn:focus {
 /* ── Responsive: stack vertically on small screens ── */
 
 @media (max-width: 600px) {
-  #jinc-a11y-bar {
+  .jinc-a11y-wrapper {
     padding: 0.375rem 0.5rem;
   }
 
-  #jinc-a11y-bar nav {
+  .jinc-a11y-wrapper nav {
     gap: 0.375rem;
   }
 
@@ -295,12 +310,12 @@ html.jinc-high-contrast #jinc-a11y-bar .jinc-bar-btn:focus {
 
 /* ── WordPress admin bar offset ── */
 
-body.admin-bar #jinc-a11y-bar:not([data-layout="floating_pill"]) {
+body.admin-bar .jinc-a11y-wrapper:not([data-layout="floating_pill"]) {
   top: 32px;
 }
 
 @media (max-width: 782px) {
-  body.admin-bar #jinc-a11y-bar:not([data-layout="floating_pill"]) {
+  body.admin-bar .jinc-a11y-wrapper:not([data-layout="floating_pill"]) {
     top: 46px;
   }
 }
@@ -309,7 +324,7 @@ body.admin-bar #jinc-a11y-bar:not([data-layout="floating_pill"]) {
    BAR LAYOUT — Floating Pill styles
    ══════════════════════════════════════════════════════════ */
 
-#jinc-a11y-bar[data-layout="floating_pill"] {
+.jinc-a11y-wrapper[data-layout="floating_pill"] {
   position: fixed;
   top: auto;
   bottom: 20px;
@@ -318,33 +333,33 @@ body.admin-bar #jinc-a11y-bar:not([data-layout="floating_pill"]) {
   width: auto;
 }
 
-#jinc-a11y-bar[data-layout="floating_pill"][data-position="bottom_right"] {
+.jinc-a11y-wrapper[data-layout="floating_pill"][data-position="bottom_right"] {
   right: 20px;
   left: auto;
 }
 
-#jinc-a11y-bar[data-layout="floating_pill"][data-position="bottom_left"] {
+.jinc-a11y-wrapper[data-layout="floating_pill"][data-position="bottom_left"] {
   left: 20px;
   right: auto;
 }
 
 /* Adjust nav for floating pill */
-#jinc-a11y-bar[data-layout="floating_pill"] nav {
+.jinc-a11y-wrapper[data-layout="floating_pill"] nav {
   flex-wrap: nowrap;
 }
 
 @media (max-width: 600px) {
-  #jinc-a11y-bar[data-layout="floating_pill"] {
+  .jinc-a11y-wrapper[data-layout="floating_pill"] {
     bottom: 10px;
     border-radius: 20px;
     padding: 8px 12px;
   }
   
-  #jinc-a11y-bar[data-layout="floating_pill"][data-position="bottom_right"] {
+  .jinc-a11y-wrapper[data-layout="floating_pill"][data-position="bottom_right"] {
     right: 10px;
   }
   
-  #jinc-a11y-bar[data-layout="floating_pill"][data-position="bottom_left"] {
+  .jinc-a11y-wrapper[data-layout="floating_pill"][data-position="bottom_left"] {
     left: 10px;
   }
 }

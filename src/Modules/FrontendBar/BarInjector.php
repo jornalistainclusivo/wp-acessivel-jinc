@@ -130,17 +130,28 @@ final class BarInjector
         
         $layout = $options['layout'] ?? 'top_bar';
         $position = $options['position'] ?? 'bottom_right';
+        $frontend_title = $options['frontend_title'] ?? '';
+        $a11y_id = $options['a11y_id'] ?? '';
+        
+        $container_id = empty($a11y_id) ? 'jinc-a11y-bar' : $a11y_id;
+        $aria_label = empty($frontend_title) ? 'Barra de Acessibilidade' : $frontend_title;
         $show_icons = isset($options['show_icons']) ? $options['show_icons'] : '1';
         
         $icons_class = $show_icons === '0' ? ' jinc-no-icons' : '';
 
         $html  = sprintf(
-            '<div id="jinc-a11y-bar" class="%s" role="region" aria-label="Barra de Acessibilidade" data-layout="%s" data-position="%s">',
-            esc_attr(trim('jinc-bar ' . $icons_class)),
+            '<div id="%s" class="%s" role="region" aria-label="%s" data-layout="%s" data-position="%s">',
+            esc_attr($container_id),
+            esc_attr(trim('jinc-a11y-wrapper jinc-bar ' . $icons_class)),
+            esc_attr($aria_label),
             esc_attr($layout),
             esc_attr($position)
         );
         $html .= '<nav aria-label="Controles de Acessibilidade">';
+
+        if (!empty($frontend_title)) {
+            $html .= '<span class="jinc-bar-title">' . esc_html($frontend_title) . '</span>';
+        }
 
         // 1. Skip-to-content link
         $html .= '<a href="#main" id="jinc-skip-link" class="jinc-bar-btn">';

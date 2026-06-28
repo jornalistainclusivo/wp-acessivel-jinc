@@ -22,18 +22,36 @@ class ThemeEngine
                 --jinc-bar-text: %s;
                 --jinc-bar-text-hover: %s;
                 --jinc-bar-accent: %s;
+                --jinc-bar-accent-hover: %s;
                 --jinc-bar-align: %s;
                 --jinc-bar-font: %s;
                 --jinc-btn-radius: %s;
+                --jinc-bar-size: %s;
             }',
             esc_attr($options['bg_color']),
             esc_attr($options['text_color']),
             esc_attr($options['text_hover_color']),
             esc_attr($options['accent_color']),
+            esc_attr($options['accent_hover_color']),
             esc_attr($options['align']),
             esc_attr($options['font']),
-            esc_attr($this->map_radius($options['button_style']))
+            esc_attr($this->map_radius($options['button_style'])),
+            esc_attr($options['bar_size'])
         );
+
+        if ($options['button_style'] === 'text_only') {
+            $custom_css .= ' .jinc-a11y-wrapper .jinc-bar-btn {
+                background: transparent !important;
+                border: none !important;
+            }
+            html.jinc-high-contrast .jinc-a11y-wrapper .jinc-bar-btn[aria-pressed="true"],
+            html.jinc-high-contrast .jinc-a11y-wrapper .jinc-bar-btn:hover,
+            html.jinc-high-contrast .jinc-a11y-wrapper .jinc-bar-btn:focus {
+                background-color: transparent !important;
+                color: #ffff00 !important;
+                text-decoration: underline !important;
+            }';
+        }
 
         wp_add_inline_style('jinc-bar-css', $custom_css);
     }
@@ -53,10 +71,12 @@ class ThemeEngine
             'text_color'       => $options['text_color'] ?? '#FFFFFF',
             'text_hover_color' => $options['text_hover_color'] ?? '#E0E0E0',
             'accent_color'     => $options['accent_color'] ?? '#0052CC',
+            'accent_hover_color' => $options['accent_hover_color'] ?? '#003d99',
             'align'            => $options['align'] ?? 'center',
             'font'             => $options['font'] ?? 'system-ui, -apple-system, sans-serif',
             'show_icons'       => isset($options['show_icons']) ? $options['show_icons'] : '1',
             'button_style'     => $options['button_style'] ?? 'arredondado',
+            'bar_size'         => $options['bar_size'] ?? 'medium',
         ];
     }
 

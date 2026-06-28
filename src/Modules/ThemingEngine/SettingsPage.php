@@ -95,6 +95,15 @@ class SettingsPage
         );
 
         add_settings_field(
+            'jinc_theme_accent_hover_color',
+            'Cor de Destaque (Hover)',
+            [$this, 'render_color_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section',
+            ['key' => 'accent_hover_color', 'default' => '#003d99']
+        );
+
+        add_settings_field(
             'jinc_theme_align',
             'Alinhamento',
             [$this, 'render_align_field'],
@@ -125,6 +134,32 @@ class SettingsPage
             'jinc-wp-acessivel',
             'jinc_theme_main_section'
         );
+
+        add_settings_field(
+            'jinc_theme_bar_size',
+            'Tamanho da Barra',
+            [$this, 'render_bar_size_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section'
+        );
+
+        add_settings_field(
+            'jinc_theme_frontend_title',
+            'Título da Barra (Frontend)',
+            [$this, 'render_text_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section',
+            ['key' => 'frontend_title', 'default' => '']
+        );
+
+        add_settings_field(
+            'jinc_theme_a11y_id',
+            'ID do Contêiner',
+            [$this, 'render_text_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section',
+            ['key' => 'a11y_id', 'default' => '']
+        );
     }
 
     public function sanitize_options(array $input): array
@@ -143,6 +178,7 @@ class SettingsPage
         $sanitized['text_color'] = sanitize_hex_color($input['text_color'] ?? '') ?? '';
         $sanitized['text_hover_color'] = sanitize_hex_color($input['text_hover_color'] ?? '') ?? '';
         $sanitized['accent_color'] = sanitize_hex_color($input['accent_color'] ?? '') ?? '';
+        $sanitized['accent_hover_color'] = sanitize_hex_color($input['accent_hover_color'] ?? '') ?? '';
         
         $sanitized['align'] = in_array($input['align'] ?? '', ['flex-start', 'center', 'flex-end'], true) 
             ? $input['align'] 
@@ -154,9 +190,16 @@ class SettingsPage
             
         $sanitized['show_icons'] = isset($input['show_icons']) && $input['show_icons'] === '1' ? '1' : '0';
 
-        $sanitized['button_style'] = in_array($input['button_style'] ?? '', ['quadrado', 'arredondado', 'pilula'], true)
+        $sanitized['button_style'] = in_array($input['button_style'] ?? '', ['quadrado', 'arredondado', 'pilula', 'text_only'], true)
             ? $input['button_style']
-            : 'arredondado'; // Let's use arredondado (8px) or 4px as default? The prompt says "var(--jinc-btn-radius, 4px)" so maybe arredondado is 4px or 8px. Let's just save default as empty or default string. Let's use 'default' or just not map it strictly. Actually the CSS fallback is 4px, but let's make the default 'arredondado'.
+            : 'arredondado';
+
+        $sanitized['bar_size'] = in_array($input['bar_size'] ?? '', ['small', 'medium', 'large'], true)
+            ? $input['bar_size']
+            : 'medium';
+
+        $sanitized['frontend_title'] = sanitize_text_field($input['frontend_title'] ?? '');
+        $sanitized['a11y_id'] = sanitize_title($input['a11y_id'] ?? '');
 
         return $sanitized;
     }
@@ -171,16 +214,28 @@ class SettingsPage
 
     public function render_page(): void
     {
+        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'visual';
         ?>
         <div class="wrap">
-            <h1>WP Acessível - Configurações Visuais</h1>
-            <form method="post" action="options.php">
-                <?php
-                settings_fields(self::OPTION_GROUP);
-                do_settings_sections('jinc-wp-acessivel');
-                submit_button();
-                ?>
-            </form>
+            <h1>WP Acessível</h1>
+            <h2 class="nav-tab-wrapper">
+                <a href="?page=jinc-wp-acessivel&tab=visual" class="nav-tab <?php echo $active_tab === 'visual' ? 'nav-tab-active' : ''; ?>">Configurações Visuais</a>
+                <a href="?page=jinc-wp-acessivel&tab=descreveai" class="nav-tab <?php echo $active_tab === 'descreveai' ? 'nav-tab-active' : ''; ?>">DescreveAI</a>
+            </h2>
+            
+            <?php if ($active_tab === 'visual'): ?>
+                <form method="post" action="options.php">
+                    <?php
+                    settings_fields(self::OPTION_GROUP);
+                    do_settings_sections('jinc-wp-acessivel');
+                    submit_button();
+                    ?>
+                </form>
+            <?php elseif ($active_tab === 'descreveai'): ?>
+                <div class="notice notice-info" style="margin-top: 20px;">
+                    <p>Em breve: Inteligência Artificial para descrições de imagens automáticas.</p>
+                </div>
+            <?php endif; ?>
         </div>
         <?php
     }
@@ -265,7 +320,32 @@ class SettingsPage
             <option value="quadrado" <?php selected($button_style, 'quadrado'); ?>>Quadrado (0px)</option>
             <option value="arredondado" <?php selected($button_style, 'arredondado'); ?>>Arredondado (8px)</option>
             <option value="pilula" <?php selected($button_style, 'pilula'); ?>>Pílula (50px)</option>
+            <option value="text_only" <?php selected($button_style, 'text_only'); ?>>Apenas Texto</option>
         </select>
+        <?php
+    }
+
+    public function render_bar_size_field(): void
+    {
+        $options = get_option(self::OPTION_NAME, []);
+        $bar_size = $options['bar_size'] ?? 'medium';
+        ?>
+        <select name="jinc_theme_options[bar_size]" id="jinc_theme_bar_size">
+            <option value="small" <?php selected($bar_size, 'small'); ?>>Pequeno</option>
+            <option value="medium" <?php selected($bar_size, 'medium'); ?>>Médio</option>
+            <option value="large" <?php selected($bar_size, 'large'); ?>>Grande</option>
+        </select>
+        <?php
+    }
+
+    public function render_text_field(array $args): void
+    {
+        $key = $args['key'];
+        $default = $args['default'] ?? '';
+        $options = get_option(self::OPTION_NAME, []);
+        $val = $options[$key] ?? $default;
+        ?>
+        <input type="text" class="regular-text" name="jinc_theme_options[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($val); ?>" />
         <?php
     }
 }

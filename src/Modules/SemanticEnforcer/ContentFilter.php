@@ -61,11 +61,10 @@ final class ContentFilter
 
         // Cache check
         $postId = $this->getCurrentPostId();
-        $postModified = $this->getCurrentPostModified();
-
-        if ($postId > 0 && $postModified !== '') {
-            $cached = $this->cache->get($postId, $postModified);
-            if ($cached !== null) {
+        
+        if ($postId > 0) {
+            $cached = $this->cache->get($postId);
+            if ($cached !== false && $cached !== null) {
                 $this->logger->debug('Cache HIT', ['post_id' => $postId]);
                 return $cached;
             }
@@ -93,8 +92,8 @@ final class ContentFilter
             $result = $this->serializer->serialize($dom);
 
             // Cache store
-            if ($postId > 0 && $postModified !== '') {
-                $this->cache->set($postId, $postModified, $result);
+            if ($postId > 0) {
+                $this->cache->set($postId, $result);
                 $this->logger->debug('Cache STORE', ['post_id' => $postId]);
             }
 

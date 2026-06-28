@@ -408,3 +408,32 @@ function jinc_reset_wp_stubs(): void
     $_jinc_options = [];
     $_jinc_inline_styles = [];
 }
+
+if (!function_exists("get_post")) {
+    function get_post($post = null) {
+        global $_jinc_posts;
+        $id = $post ?: 10;
+        if (isset($_jinc_posts[$id])) {
+            return (object) $_jinc_posts[$id];
+        }
+        return (object) ["ID" => clone $id, "post_modified" => "2023-01-01 12:00:00"];
+    }
+}
+
+if (!function_exists("wp_is_post_revision")) {
+    function wp_is_post_revision($post) {
+        return false;
+    }
+}
+
+if (!function_exists("wp_is_post_autosave")) {
+    function wp_is_post_autosave($post) {
+        return false;
+    }
+}
+
+
+if (!defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 86400);
+}
+

@@ -1,133 +1,72 @@
----
-jinc-spec-version: 1.0.0
-project-name: wp-acessivel-jinc
-feature-name: CacheLayer
-status: draft
-prd-ref: Non-Functional Requirements (Performance)
-sdd-ref: ADR-003 (Transients API)
-related-branch: docs/comprehensive-specs
-coverage: "1/1 FRs mapped"
-created-at: 2026-06-27
-authors: Antigravity Orchestrator
----
+# SPEC_CacheLayer.md
 
-# SPEC: Cache Layer
+**Phase 3.8 — Transients Cache Layer**
 
-## Coverage Report
+## 1. Visão Geral (Goal)
 
-| FR     | Requirement Summary          | Spec Element                                   | Status     |
-| ------ | ---------------------------- | ---------------------------------------------- | ---------- |
-| NFR-P1 | Desempenho e Caching de HTML transformado | `TransientCacheManager` class                | 🟢 Covered |
+A Phase 1 (Semantic Enforcer) utiliza `DOMDocument` para analisar e reestruturar cabeçalhos HTML e atributos ARIA no gancho `the_content`. Essa operação de I/O intensivo sobre strings e manipulação de árvore DOM é pesada e escala de forma ineficiente em sites com alto tráfego.
 
----
+O objetivo da **Phase 3.8** é implementar a classe `CacheManager` que se integra com a **Transients API** do WordPress para guardar o HTML já processado de cada post, evitando múltiplas passagens pela árvore DOM.
 
-## 1. Type System — AI-Ready Foundation
+## 2. Arquitetura do Cache (Storage Mechanism)
 
-### 🤖 AI-Ready Layer (Machine Consumable)
+### 2.1. Classe `CacheManager`
 
-```typescript
-/**
- * @spec-ref NFR-P1
- * Represents the Cache payload for processed HTML content
- */
-interface CachedContent {
-    /** 
-     * The ID of the post/page 
-     */
-    postId: number;
+A classe `CacheManager` será introduzida na camada de Serviços/Módulos para gerenciar todo o ciclo de vida do cache (leitura, gravação, invalidação).
 
-    /** 
-     * The HTML string after SemanticEnforcer mutations 
-     */
-    processedHtml: string;
+### 2.2. Estratégia de Chave
 
-    /**
-     * Timestamp of the original post modified date, for invalidation
-     */
-    lastModified: number;
-}
-```
+Para evitar vazamentos de dados, condições de corrida e conflitos entre conteúdos atualizados, a chave do transient será baseada no ID do Post e na data exata de modificação do mesmo.
 
-### 🔧 Implementation Layer (Human + AI)
+* **Formato da Chave:** `jinc_a11y_content_{post_id}_{timestamp_de_modificacao}`
+* **Exemplo de Chave:** `jinc_a11y_content_402_1718293021`
+* **Tempo de Expiração (TTL):** Dependerá do contexto do servidor (padrão 12 horas: `12 * HOUR_IN_SECONDS`), mas, como a chave muta quando o post muda, a duração pode ser longa sem risco de estagnação.
 
-The Cache layer must strictly use the WordPress Transients API `set_transient` and `get_transient`. 
-The key must be deterministic, combining a prefix and the Post ID (e.g., `jinc_a11y_content_{post_id}`).
+## 3. Lógica de Interceptação (`SemanticEnforcer`)
 
----
+A interceptação ocorrerá *antes* da execução pesada da manipulação DOM.
+O hook `the_content` registrado em `SemanticEnforcer` deverá orquestrar um **Early Return**:
 
-## 2. API Contract & Hooks
+1. Identifica o Post atual (`$post = get_post()`).
+2. Constrói a chave dinâmica de cache a partir do `post_modified`.
+3. Checa o cache: `$cached_html = get_transient($cache_key)`.
+4. **Early Return:** Se o transient existe, retorna `$cached_html` imediatamente (ignora o restante do processo).
+5. **Processamento:** Se não existe (Cache Miss), instancia `DOMDocument`, faz todas as correções acessíveis.
+6. **Salvamento:** Salva o output gerado via `set_transient($cache_key, $final_html)`.
+7. Retorna o output final.
 
-### 🤖 AI-Ready Layer (Machine Consumable)
+## 4. Estratégia de Invalidação (Purge)
 
-```php
-/**
- * Class TransientCacheManager
- * @spec-ref NFR-P1
- */
-interface ICacheManager {
-    // Retrieves cached HTML if valid
-    public function getCachedContent(int $postId, string $currentModifiedDate): ?string;
-    
-    // Saves processed HTML to transient
-    public function setCachedContent(int $postId, string $html, string $modifiedDate): bool;
-    
-    // Hooks into 'save_post' to invalidate cache
-    public function invalidateCache(int $postId): void;
-}
-```
+Apesar da mutação natural da chave mitigar stale data, a base de dados de transients do WordPress inflaria indefinidamente com chaves abandonadas ao longo de sucessivas edições. Precisamos expurgar os transientes antigos.
 
-### 🔧 Implementation Layer (Human + AI)
+* **Hooks Alvo:** `save_post` e `post_updated`
+* **Mecanismo:** Assim que um post é salvo ou atualizado (excluindo revisões e auto-saves via `wp_is_post_revision()` e `wp_is_post_autosave()`), o sistema deverá engatilhar uma limpeza que, localizando chaves antigas com o formato `jinc_a11y_content_{post_id}_*`, remova o lixo obsoleto através da diretriz `delete_transient()`.
 
-- **Read Phase**:
-  - During `the_content` filter, before running `DOMDocument`, check if transient exists.
-  - Verify if the stored `lastModified` matches the current `get_post_modified_time()`. If mismatch, consider cache invalid.
-- **Write Phase**:
-  - After `DOMDocument` processing, store the output HTML and the `lastModified` timestamp.
-  - Set expiration to a reasonable limit (e.g., 24 hours or 1 week) to prevent db bloat.
-- **Invalidation Phase**:
-  - Hook into `save_post` and `deleted_post` to explicitly delete the transient `delete_transient("jinc_a11y_content_{$postId}")`.
+> [!WARNING]
+> A purga do cache deve focar primariamente na exclusão agressiva ao salvar (via `delete_transient`), garantindo que apenas os dados novos existam e prevenindo inchaço do banco de dados (especialmente na tabela `wp_options`).
 
----
+## 5. Casos de Teste Gherkin (PHPUnit)
 
-## 3. Business Rules
+Os testes deverão cobrir todos os fluxos com *mocking* correto das funções WP.
 
-BR-CL-001: Zero DB Tables
-  Precondition: System initializes cache layer.
-  Input: `setCachedContent` method call.
-  Invariant: Must not run raw SQL or create custom tables.
-  Output/Action: Use `set_transient()`.
-  Violation: E_ARCH_VIOLATION - Direct DB query detected.
+### Cenário 1: Geração de Cache na primeira visita (Cache Miss)
 
-BR-CL-002: Safe Invalidation
-  Precondition: User updates a post in wp-admin.
-  Input: `save_post` hook fires.
-  Invariant: Users must see the updated accessible content immediately.
-  Output/Action: Call `delete_transient()` for the specific post ID.
+**Given** que o post com ID "10" não possui um transient válido ativo
+**When** a função `the_content` é filtrada via `SemanticEnforcer`
+**Then** o output deve ser re-processado via `DOMDocument`
+**And** um transient contendo a chave vinculada ao post 10 deve ser criado com o HTML gerado.
 
----
+### Cenário 2: Recuperação de Cache (Cache Hit)
 
-## 4. Critical Path — Gherkin
+**Given** que o post com ID "10" possui um transient perfeitamente válido
+**When** a função `the_content` é filtrada via `SemanticEnforcer`
+**Then** a função deve abortar precocemente a execução pesada (Early Return)
+**And** retornar diretamente a string contida no transient
+**And** as lógicas de DOM (como injeção de Headers e ARIA) não devem ser chamadas redundantemente.
 
-```gherkin
-Feature: Transient Caching for Semantic Enforcer
+### Cenário 3: Purga Completa ao salvar post (Invalidation)
 
-  Scenario: Cache Miss — First load
-    Given a post has not been cached
-    When a visitor requests the post
-    Then the "SemanticEnforcer" parses the HTML with DOMDocument
-    And the output is saved to the Transients API with the post's modification date
-    And the parsed HTML is displayed to the user
-
-  Scenario: Cache Hit — Subsequent load
-    Given a post is already cached in Transients API
-    And the post has not been modified since caching
-    When a visitor requests the post
-    Then the system retrieves the HTML from the cache
-    And skips the DOMDocument processing phase entirely
-
-  Scenario: Cache Invalidation on Update
-    Given a post is cached
-    When an editor updates the post content in wp-admin
-    Then the "save_post" hook triggers "invalidateCache"
-    And the cache transient for that post is deleted
-```
+**Given** que existem três (3) registros de cache antigos vinculados ao ID "10" na tabela de transientes
+**When** o hook `save_post` é disparado para o ID "10" simulando uma edição
+**Then** o `CacheManager` deve acionar a diretiva de exclusão
+**And** todos os registros de cache do ID "10" devem ser purgados imediatamente garantindo um banco limpo.

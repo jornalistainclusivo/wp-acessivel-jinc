@@ -185,6 +185,13 @@ if (!function_exists('wp_kses_post')) {
     }
 }
 
+if (!function_exists('esc_html')) {
+    function esc_html(string $text): string
+    {
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
 if (!function_exists('esc_attr')) {
     function esc_attr(string $text): string
     {
@@ -196,6 +203,20 @@ if (!function_exists('wp_json_encode')) {
     function wp_json_encode(mixed $data, int $options = 0, int $depth = 512): string|false
     {
         return json_encode($data, $options, $depth);
+    }
+}
+
+if (!function_exists('sanitize_text_field')) {
+    function sanitize_text_field(string $str): string
+    {
+        return strip_tags(trim($str));
+    }
+}
+
+if (!function_exists('sanitize_title')) {
+    function sanitize_title(string $title, string $fallback_title = '', string $context = 'save'): string
+    {
+        return strtolower(str_replace(' ', '-', trim($title)));
     }
 }
 
@@ -316,6 +337,27 @@ if (!function_exists('add_settings_field')) {
     function add_settings_field(string $id, string $title, callable $callback, string $page, string $section = 'default', array $args = []): void
     {
         // No-op for tests
+    }
+}
+
+if (!function_exists('settings_fields')) {
+    function settings_fields(string $option_group): void
+    {
+        echo '<input type="hidden" name="option_page" value="' . esc_attr($option_group) . '" />';
+    }
+}
+
+if (!function_exists('do_settings_sections')) {
+    function do_settings_sections(string $page): void
+    {
+        // No-op for tests
+    }
+}
+
+if (!function_exists('submit_button')) {
+    function submit_button(string $text = '', string $type = 'primary', string $name = 'submit', bool $wrap = true, array|string $other_attributes = ''): void
+    {
+        echo '<input type="submit" name="' . esc_attr($name) . '" id="' . esc_attr($name) . '" class="button button-' . esc_attr($type) . '" value="' . esc_attr($text ?: 'Salvar Alterações') . '" />';
     }
 }
 

@@ -123,8 +123,24 @@ class BarInjectorTest extends TestCase
         $html = $this->injector->getBarHtml();
 
         $this->assertStringContainsString('id="jinc-a11y-bar"', $html);
+        $this->assertStringContainsString('jinc-a11y-wrapper', $html);
         $this->assertStringContainsString('role="region"', $html);
         $this->assertStringContainsString('aria-label="Barra de Acessibilidade"', $html);
+    }
+
+    /** @test */
+    public function it_renders_custom_frontend_title_and_id(): void
+    {
+        update_option('jinc_theme_options', [
+            'frontend_title' => 'My Custom Bar Title',
+            'a11y_id' => 'my-custom-wrapper',
+        ]);
+
+        $html = $this->injector->getBarHtml();
+
+        $this->assertStringContainsString('id="my-custom-wrapper"', $html);
+        $this->assertStringContainsString('aria-label="My Custom Bar Title"', $html);
+        $this->assertStringContainsString('<span class="jinc-bar-title">My Custom Bar Title</span>', $html);
     }
 
     /** @test */
@@ -156,7 +172,7 @@ class BarInjectorTest extends TestCase
         $output = ob_get_clean();
 
         // Should appear exactly once
-        $this->assertSame(1, substr_count($output, 'id="jinc-a11y-bar"'));
+        $this->assertSame(1, substr_count($output, 'jinc-a11y-wrapper'));
     }
 
     /** @test */
@@ -168,7 +184,7 @@ class BarInjectorTest extends TestCase
         $output = ob_get_clean();
 
         // Should appear exactly once (renderBar), fallback should be suppressed
-        $this->assertSame(1, substr_count($output, 'id="jinc-a11y-bar"'));
+        $this->assertSame(1, substr_count($output, 'jinc-a11y-wrapper'));
     }
 
     /** @test */
@@ -178,7 +194,7 @@ class BarInjectorTest extends TestCase
         $this->injector->renderBarFallback();
         $output = ob_get_clean();
 
-        $this->assertStringContainsString('id="jinc-a11y-bar"', $output);
+        $this->assertStringContainsString('jinc-a11y-wrapper', $output);
         $this->assertStringContainsString('Controles de Acessibilidade', $output);
     }
 }

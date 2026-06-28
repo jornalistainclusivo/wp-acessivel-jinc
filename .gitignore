@@ -61,3 +61,4 @@ build/
 # WordPress Plugin Specific (optional if there are dev scripts)
 /assets/dist/
 /languages/*.mo
+*.zip

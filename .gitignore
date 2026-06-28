@@ -1,4 +1,63 @@
+# Antigravity/Agentic Folders (JINC Protocol)
 system_instructions
-.agents
+.agents/
 
-.env*
+# Security (Zero-Trust)
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+client_secret.json
+
+# Composer
+vendor/
+composer.phar
+
+# Node / JS
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.buildpath
+
+# PHPUnit & Coverage
+.phpunit.result.cache
+coverage/
+html/
+clover.xml
+phpunit.xml
+
+# Build and Temp folders
+dist/
+build/
+.tmp/
+.temp/
+.next/
+
+# WordPress Plugin Specific (optional if there are dev scripts)
+/assets/dist/
+/languages/*.mo

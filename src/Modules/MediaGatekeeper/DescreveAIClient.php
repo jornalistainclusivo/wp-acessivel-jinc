@@ -69,10 +69,11 @@ class DescreveAIClient
         $response_body = wp_remote_retrieve_body($response);
         $data = json_decode($response_body, true);
 
-        if (isset($data['success']) && $data['success'] === true && !empty($data['data']['description'])) {
+        if (isset($data['success']) && $data['success'] === true && (!empty($data['data']['alt']) || !empty($data['data']['description']))) {
             return [
                 'success' => true,
-                'alt' => $data['data']['description'],
+                'alt' => $data['data']['alt'] ?? $data['data']['description'],
+                'description' => $data['data']['description'] ?? '',
                 'status_code' => 200
             ];
         }

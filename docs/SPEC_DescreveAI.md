@@ -86,36 +86,43 @@ O uso mandatório do `wp_remote_post` garante conformidade com padrões WordPres
 
 ---
 
-## 3. Orquestração do Gatekeeper
+## 3. Arquitetura Assíncrona (AJAX & Quarantine)
 
 ### 🤖 AI-Ready Layer (Machine Consumable)
 
 ```typescript
-// Fluxo lógico na validação de Upload (State Machine simplificada)
+// Fluxo lógico na validação Assíncrona (State Machine)
 type UploadState = 
   | "ALT_PRESENT"     // Aprova imediato
   | "AI_INACTIVE"     // Bloqueio 403
-  | "AI_ANALYZING"    // Chamando API
-  | "AI_SUCCESS_200"  // Set _wp_attachment_image_alt silencioso e aprova
-  | "AI_FAIL_ERROR"   // Bloqueio 403 (Human Intervention)
+  | "AI_QUARANTINE"   // Aprova com alt temporário e status 'pending'
+  | "AI_PROCESSING"   // Processamento via AJAX
+  | "AI_SUCCESS"      // Alt definitivo salvo e 'pending' removido
+  | "AI_FAILED"       // Falha na IA, status muda para 'failed'
 ```
 
 ### 🔧 Implementation Layer (Human + AI)
 
-A injeção ocorre no `RestUploadValidator.php`:
+`BR-UPLOAD-001: Quarentena de Mídia (RestUploadValidator)`
+- Quando o upload chega via REST sem alt-text, e a DescreveAI está ATIVA, o `RestUploadValidator` **NÃO** deve instanciar o `DescreveAIClient`.
+- **Output:** Injeta silenciosamente o post meta `_wp_attachment_image_alt` com o valor `[JINC: Processando IA...]`.
+- Injeta o post meta `_jinc_ai_status` com o valor `pending`.
+- Aprova a persistência da imagem (HTTP 201).
 
-`BR-UPLOAD-001: Fluxo de Gatekeeper e Fallback da IA`
-- **Precondition:** Um upload chega via REST e o arquivo de imagem **não** possui alt-text enviado na requisição.
-- **Input:** Arquivo binário temporário/salvo.
-- **Invariant:** Nenhuma imagem sem alt-text avaliado e verificado deve ultrapassar o gatekeeper.
-- **Output/Action:** 
-  1. Verifica se `descreveai_active` está ON. Se OFF -> Bloqueia (HTTP 403).
-  2. Se ON -> Aciona `DescreveAIClient::analyze()`.
-  3. Se a API responder HTTP 200 -> Injeta silenciosamente a resposta como post meta `_wp_attachment_image_alt` -> Aprova upload (201).
-- **Violation:** Se a API falhar por Timeout, Erro 500, ou Endpoint Offline -> Gatekeeper encerra a execução e devolve bloqueio HTTP 403. Retorna erro forçando intervenção humana.
+`BR-UPLOAD-002: Gatilho Frontend (assets/js/jinc-media-ai.js)`
+- Um script JS enfileirado (`admin_enqueue_scripts`) intercepta eventos do `wp.Uploader` / `wp.media`.
+- Ao concluir um upload, verifica se o anexo possui o status `pending` (via resposta REST ou extração).
+- Dispara uma requisição POST assíncrona para `admin-ajax.php?action=jinc_process_ai`, passando o ID do anexo.
+
+`BR-UPLOAD-003: Processador Background (AsyncAIProcessor)`
+- Hook: `wp_ajax_jinc_process_ai`
+- Recebe o ID do anexo.
+- Instancia o `DescreveAIClient` e executa a requisição real de forma demorada sem travar a thread de upload do usuário.
+- Se Sucesso: Substitui o alt `[JINC: Processando IA...]` pela resposta gerada, e exclui o meta `_jinc_ai_status`.
+- Se Falha: Retorna um erro JSON e atualiza o `_jinc_ai_status` para `failed` (permitindo retentativa manual na UI ou apenas alertando o usuário).
 
 ### 🔗 Traceability Layer (Human)
-Garante a política Zero-Trust Accessibility. A falha da IA não aprova a imagem cegamente; pelo contrário, transfere a responsabilidade para o humano garantindo um repositório 100% com texto alternativo.
+A decisão pela assincronicidade visa uma UX fluida ("Seamless"). Timeout de APIs LLMs não devem estourar limites do servidor ou gerar ansiedade no usuário. A quarentena garante que a imagem não fique sem alt temporário enquanto a rede processa.
 
 ---
 
@@ -124,26 +131,35 @@ Garante a política Zero-Trust Accessibility. A falha da IA não aprova a imagem
 ### 🤖 AI-Ready Layer (Machine Consumable)
 
 ```gherkin
-Feature: Integração DescreveAI no Filtro de Upload Rest
+Feature: Integração DescreveAI via Arquitetura Assíncrona
 
-  Scenario: Happy path — API gera alt com sucesso e libera upload
+  Scenario: Fase 1 - Upload entra em Quarentena
     Given a configuração DescreveAI está ativa
     And a imagem enviada na rota de media REST não possui alt-text
-    And o filtro `pre_http_request` mocka uma resposta síncrona HTTP 200 com alt "Teste IA"
-    When o endpoint de upload finaliza a persistência
+    When o RestUploadValidator intercepta a requisição
     Then o status code do upload é aprovado (HTTP 201/200)
-    And o post meta `_wp_attachment_image_alt` contém "Teste IA"
+    And o post meta `_wp_attachment_image_alt` contém "[JINC: Processando IA...]"
+    And o post meta `_jinc_ai_status` é marcado como "pending"
 
-  Scenario: Edge case — Timeout da API de IA forçado
-    Given a configuração DescreveAI está ativa com timeout de 10s
-    And o filtro `pre_http_request` mocka um evento de WP_Error (Timeout)
-    When a imagem sem alt-text tenta realizar o upload
-    Then a requisição é abortada e rejeitada (HTTP 403)
-    And o upload reporta que a IA falhou, requerindo intervenção humana
+  Scenario: Fase 2 - Processamento Background Sucesso
+    Given uma imagem existe no banco com `_jinc_ai_status` igual a "pending"
+    When a requisição AJAX atinge `wp_ajax_jinc_process_ai`
+    And o filtro `pre_http_request` mocka uma resposta HTTP 200 com alt "Teste IA"
+    Then o AsyncAIProcessor finaliza com sucesso
+    And o post meta `_wp_attachment_image_alt` é atualizado para "Teste IA"
+    And o post meta `_jinc_ai_status` é excluído
+
+  Scenario: Fase 2 - Processamento Background Falha
+    Given uma imagem existe no banco com `_jinc_ai_status` igual a "pending"
+    When a requisição AJAX atinge `wp_ajax_jinc_process_ai`
+    And o filtro `pre_http_request` mocka uma resposta HTTP 500 (Timeout/Erro)
+    Then o AsyncAIProcessor devolve um JSON de erro
+    And o post meta `_jinc_ai_status` é atualizado para "failed"
+    And o alt temporário "[JINC: Processando IA...]" é mantido para intervenção manual
 ```
 
 ### 🔧 Implementation Layer (Human + AI)
-Para testar, todos os endpoints do cliente IA **devem** ser mockados. A exigência técnica é interceptar a chamada do `wp_remote_post` usando o filtro nativo `pre_http_request` do WordPress na suíte PHPUnit.
+Para testar, a primeira fase testa o bypass com injeção de metadata. A segunda fase testa estritamente a nova classe `AsyncAIProcessor` simulando chamadas HTTP mockadas através do filtro `pre_http_request`.
 
 ### 🔗 Traceability Layer (Human)
-Isto garante que as falhas de rede (que seriam gargalos de tempo) não travem as execuções de CI/CD. Testes blindados validam perfeitamente a barreira de segurança sem consumir a quota da API real.
+Isto garante que as falhas de rede não travem uploads, e que o fluxo de BDD agora abrange a esteira completa (Upload -> Quarentena -> AJAX -> Resolução).

@@ -63,13 +63,24 @@ class AsyncAIProcessor
             return;
         }
 
+        // Prevenir que o servidor PHP mate o processo antes da IA terminar
+        if (function_exists('set_time_limit')) {
+            set_time_limit(120);
+        }
+
         $options = get_option('jinc_theme_options', []);
         $endpoint = $options['descreveai_endpoint'] ?? '';
         $apiKey = $options['descreveai_api_key'] ?? '';
-        $timeout = (int) ($options['descreveai_timeout'] ?? 15);
+        
+        // A IA processando imagem pode demorar até 45s. Forçando 60s de timeout para evitar morte prematura.
+        $timeout = 60;
+
+        error_log("[JINC AI] Iniciando request para o Node.js: " . $filePath);
 
         $client = new DescreveAIClient();
         $aiResult = $client->analyze($filePath, $endpoint, $apiKey, $timeout);
+
+        error_log("[JINC AI] Resposta do Node.js recebida: " . wp_json_encode($aiResult));
 
         if (isset($aiResult['success']) && $aiResult['success'] === true && !empty($aiResult['alt'])) {
             update_post_meta($attachmentId, '_wp_attachment_image_alt', $aiResult['alt']);
@@ -82,6 +93,7 @@ class AsyncAIProcessor
                 ]);
             }
 
+            error_log("[JINC AI] Meta atualizado com sucesso no BD para o ID: " . $attachmentId);
             $this->logger->info('AJAX AI processing success', ['attachment_id' => $attachmentId]);
             wp_send_json_success([
                 'message' => 'AI processing complete.',
@@ -92,6 +104,7 @@ class AsyncAIProcessor
         }
 
         update_post_meta($attachmentId, '_jinc_ai_status', 'failed');
+        error_log("[JINC AI] Falha ao processar no PHP. Resultado: " . wp_json_encode($aiResult));
         $this->logger->warning('AJAX AI processing failed', [
             'attachment_id' => $attachmentId, 
             'error' => $aiResult['error'] ?? 'Unknown error'

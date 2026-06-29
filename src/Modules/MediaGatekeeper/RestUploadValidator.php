@@ -64,10 +64,12 @@ final class RestUploadValidator
             // Check for DescreveAI Fallback (Quarantine Mode)
             $options = get_option('jinc_theme_options', []);
             if (!empty($options['descreveai_active'])) {
-                if (isset($prepared->ID)) {
-                    update_post_meta((int) $prepared->ID, '_wp_attachment_image_alt', '[JINC: Processando IA...]');
-                    update_post_meta((int) $prepared->ID, '_jinc_ai_status', 'pending');
+                // WP REST API pre_insert: o ID ainda não existe, então injetamos no meta_input
+                if (!isset($prepared->meta_input)) {
+                    $prepared->meta_input = [];
                 }
+                $prepared->meta_input['_wp_attachment_image_alt'] = '[JINC: Processando IA...]';
+                $prepared->meta_input['_jinc_ai_status'] = 'pending';
                 
                 $this->logger->info(
                     'REST upload approved via DescreveAI fallback (Quarantine)',

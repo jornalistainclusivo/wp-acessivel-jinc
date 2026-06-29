@@ -9,9 +9,12 @@
         return;
     }
 
+    // Array para evitar disparos duplicados
+    var processingQueue = {};
+
     // Hook into Backbone Attachments collection
     if (wp.media && wp.media.model && wp.media.model.Attachments) {
-        wp.media.model.Attachments.all.on('add', function(attachment) {
+        wp.media.model.Attachments.all.on('add change sync', function(attachment) {
             checkAndProcessAI(attachment);
         });
     } else {
@@ -38,11 +41,17 @@
 
     function checkAndProcessAI(attachment) {
         var altText = attachment.get('alt');
+        var attachmentId = attachment.get('id');
         
+        // Debug
+        // console.log('Checking attachment', attachmentId, altText);
+        
+        if (!attachmentId || !altText) return;
+
         // Only trigger if the alt text matches the Quarantine string
-        if (altText === '[JINC: Processando IA...]') {
-            
-            var attachmentId = attachment.get('id');
+        if (altText === '[JINC: Processando IA...]' && !processingQueue[attachmentId]) {
+            processingQueue[attachmentId] = true;
+            console.log('JINC AI: Disparando requisição AJAX para o attachment ' + attachmentId);
 
             $.post(jincAiData.ajaxUrl, {
                 action: 'jinc_process_ai',
@@ -59,11 +68,14 @@
                     }
                     console.log('JINC AI: Imagem processada com sucesso via IA.', response.data);
                 } else {
-                    console.warn('JINC AI: Falha no processamento (Timeout/Error) para attachment ' + attachmentId);
+                    console.warn('JINC AI: Falha no processamento (Timeout/Error) para attachment ' + attachmentId, response);
+                    // Não dar retry automático para evitar DDoS no backend
+                    processingQueue[attachmentId] = 'failed'; 
                 }
             })
-            .fail(function() {
-                console.error('JINC AI: Falha catastrófica de AJAX para attachment ' + attachmentId);
+            .fail(function(xhr) {
+                console.error('JINC AI: Falha catastrófica de AJAX para attachment ' + attachmentId, xhr.responseText);
+                processingQueue[attachmentId] = 'failed';
             });
         }
     }

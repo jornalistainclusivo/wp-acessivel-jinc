@@ -10,6 +10,11 @@ use WpAcessivelJinc\Modules\FrontendBar\BarInjector;
 use WpAcessivelJinc\Utils\CacheManager;
 use WpAcessivelJinc\Utils\DOMDocumentHelper;
 use WpAcessivelJinc\Utils\Logger;
+use WpAcessivelJinc\Modules\MediaGatekeeper\AdminNoticeManager;
+use WpAcessivelJinc\Modules\MediaGatekeeper\AltTextValidator;
+use WpAcessivelJinc\Modules\MediaGatekeeper\AsyncAIProcessor;
+use WpAcessivelJinc\Modules\MediaGatekeeper\AttachmentMetaFilter;
+use WpAcessivelJinc\Modules\MediaGatekeeper\RestUploadValidator;
 
 /**
  * Plugin initialization, module loading, and hook registration.
@@ -60,6 +65,19 @@ final class Bootstrap
         );
 
         $contentFilter->register();
+
+        // ── Media Gatekeeper module (Descreve AI) ──
+        $altTextValidator = new AltTextValidator();
+        $adminNoticeManager = new AdminNoticeManager();
+        
+        $attachmentMetaFilter = new AttachmentMetaFilter($altTextValidator, $adminNoticeManager, $logger);
+        $attachmentMetaFilter->register();
+        
+        $restUploadValidator = new RestUploadValidator($altTextValidator, $logger);
+        $restUploadValidator->register();
+        
+        $asyncAiProcessor = new AsyncAIProcessor($logger);
+        $asyncAiProcessor->register();
 
         // ── Frontend Accessibility Bar module (Phase 3) ──
         $pluginFile = dirname(__DIR__, 2) . '/wp-acessivel-jinc.php';

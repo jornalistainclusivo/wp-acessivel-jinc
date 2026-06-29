@@ -80,6 +80,14 @@ final class AttachmentMetaFilter
         }
 
         if ($result->isBlocking()) {
+            $options = get_option('jinc_theme_options', []);
+            if (!empty($options['descreveai_active'])) {
+                $this->updateAttachmentMeta($attachmentId, '_wp_attachment_image_alt', '[JINC: Processando IA...]');
+                $this->updateAttachmentMeta($attachmentId, '_jinc_ai_status', 'pending');
+                $this->logger->info('Attachment quarantined for AI', ['attachment_id' => $attachmentId, 'mime_type' => $mimeType]);
+                return;
+            }
+
             $this->noticeManager->queueNotice($attachmentId);
             $this->logger->info(
                 'Classic upload: image missing alt text',

@@ -65,6 +65,25 @@ class SettingsPageTest extends TestCase
         $this->assertEquals('my-custom-id', $sanitized['a11y_id']);
     }
 
+    public function test_it_sanitizes_descreveai_options(): void
+    {
+        $settings = new SettingsPage();
+        
+        $input = [
+            'descreveai_active' => '1',
+            'descreveai_endpoint' => 'http://localhost:3000/api/analyze ',
+            'descreveai_api_key' => ' secret_token_123 ',
+            'descreveai_timeout' => '45',
+        ];
+
+        $sanitized = $settings->sanitize_options($input);
+
+        $this->assertEquals('1', $sanitized['descreveai_active']);
+        $this->assertEquals('http://localhost:3000/api/analyze', $sanitized['descreveai_endpoint']); // esc_url_raw cleans spaces
+        $this->assertEquals('secret_token_123', $sanitized['descreveai_api_key']); // sanitize_text_field cleans spaces
+        $this->assertEquals(45, $sanitized['descreveai_timeout']); // absint
+    }
+
     public function test_it_enqueues_color_picker_asset(): void
     {
         global $_jinc_enqueued_styles, $_jinc_enqueued_scripts;
@@ -98,7 +117,16 @@ class SettingsPageTest extends TestCase
         $settings->render_page();
         $output = ob_get_clean();
         
-        $this->assertStringContainsString('Em breve: Inteligência Artificial para descrições de imagens automáticas', $output);
-        $this->assertStringNotContainsString('<form method="post" action="options.php">', $output);
+        $this->assertStringNotContainsString('Em breve: Inteligência Artificial para descrições de imagens automáticas', $output);
+        $this->assertStringContainsString('<form method="post" action="options.php">', $output);
+        $this->assertStringContainsString('name="jinc_theme_options[descreveai_active]"', $output);
+        $this->assertStringContainsString('name="jinc_theme_options[descreveai_endpoint]"', $output);
+        $this->assertStringContainsString('name="jinc_theme_options[descreveai_api_key]"', $output);
+        $this->assertStringContainsString('name="jinc_theme_options[descreveai_timeout]"', $output);
+        $this->assertStringContainsString('type="password"', $output);
+        $this->assertStringContainsString('type="number"', $output);
+        $this->assertStringContainsString('min="10"', $output);
+        $this->assertStringContainsString('max="60"', $output);
+        $this->assertStringContainsString('value="30"', $output);
     }
 }

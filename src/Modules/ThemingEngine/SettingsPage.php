@@ -201,6 +201,42 @@ class SettingsPage
         $sanitized['frontend_title'] = sanitize_text_field($input['frontend_title'] ?? '');
         $sanitized['a11y_id'] = sanitize_title($input['a11y_id'] ?? '');
 
+        // DescreveAI Fields
+        if (isset($input['layout'])) {
+            // Se o 'layout' foi enviado, significa que o form da Aba Visual foi salvo.
+            // Para não perder os dados da Aba DescreveAI, precisamos restaurá-los do banco
+            // pois eles não vêm no $_POST da aba visual.
+            $existing = get_option(self::OPTION_NAME, []);
+            $sanitized['descreveai_active'] = $existing['descreveai_active'] ?? '0';
+            $sanitized['descreveai_endpoint'] = $existing['descreveai_endpoint'] ?? '';
+            $sanitized['descreveai_api_key'] = $existing['descreveai_api_key'] ?? '';
+            $sanitized['descreveai_timeout'] = $existing['descreveai_timeout'] ?? 30;
+        } else {
+            // O form DescreveAI foi salvo
+            $existing = get_option(self::OPTION_NAME, []);
+            // Restaurar abas visuais
+            $sanitized['layout'] = $existing['layout'] ?? 'top_bar';
+            $sanitized['position'] = $existing['position'] ?? 'bottom_right';
+            $sanitized['bg_color'] = $existing['bg_color'] ?? '#000000';
+            $sanitized['text_color'] = $existing['text_color'] ?? '#FFFFFF';
+            $sanitized['text_hover_color'] = $existing['text_hover_color'] ?? '#E0E0E0';
+            $sanitized['accent_color'] = $existing['accent_color'] ?? '#0052CC';
+            $sanitized['accent_hover_color'] = $existing['accent_hover_color'] ?? '#003d99';
+            $sanitized['align'] = $existing['align'] ?? 'center';
+            $sanitized['font'] = $existing['font'] ?? 'system-ui, -apple-system, sans-serif';
+            $sanitized['show_icons'] = $existing['show_icons'] ?? '1';
+            $sanitized['button_style'] = $existing['button_style'] ?? 'arredondado';
+            $sanitized['bar_size'] = $existing['bar_size'] ?? 'medium';
+            $sanitized['frontend_title'] = $existing['frontend_title'] ?? '';
+            $sanitized['a11y_id'] = $existing['a11y_id'] ?? '';
+
+            // Sanitizar dados recebidos
+            $sanitized['descreveai_active'] = isset($input['descreveai_active']) && $input['descreveai_active'] === '1' ? '1' : '0';
+            $sanitized['descreveai_endpoint'] = esc_url_raw($input['descreveai_endpoint'] ?? '');
+            $sanitized['descreveai_api_key'] = sanitize_text_field($input['descreveai_api_key'] ?? '');
+            $sanitized['descreveai_timeout'] = isset($input['descreveai_timeout']) ? absint($input['descreveai_timeout']) : 30;
+        }
+
         return $sanitized;
     }
 
@@ -232,9 +268,47 @@ class SettingsPage
                     ?>
                 </form>
             <?php elseif ($active_tab === 'descreveai'): ?>
-                <div class="notice notice-info" style="margin-top: 20px;">
-                    <p>Em breve: Inteligência Artificial para descrições de imagens automáticas.</p>
-                </div>
+                <form method="post" action="options.php">
+                    <?php
+                    settings_fields(self::OPTION_GROUP);
+                    $options = get_option(self::OPTION_NAME, []);
+                    $active = isset($options['descreveai_active']) ? $options['descreveai_active'] : '0';
+                    $endpoint = $options['descreveai_endpoint'] ?? '';
+                    $apiKey = $options['descreveai_api_key'] ?? '';
+                    $timeout = $options['descreveai_timeout'] ?? 30;
+                    ?>
+                    <table class="form-table" role="presentation">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Ativar Integração IA</th>
+                                <td>
+                                    <input type="checkbox" name="jinc_theme_options[descreveai_active]" id="descreveai_active" value="1" <?php checked($active, '1'); ?> />
+                                    <label for="descreveai_active">Habilita a geração automática de Alt Text via inteligência artificial.</label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="descreveai_endpoint">URL do Endpoint</label></th>
+                                <td>
+                                    <input type="text" class="regular-text" name="jinc_theme_options[descreveai_endpoint]" id="descreveai_endpoint" value="<?php echo esc_attr($endpoint); ?>" placeholder="ex: http://localhost:3000/api/analyze" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="descreveai_api_key">Chave da API (Token)</label></th>
+                                <td>
+                                    <input type="password" class="regular-text" name="jinc_theme_options[descreveai_api_key]" id="descreveai_api_key" value="<?php echo esc_attr($apiKey); ?>" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="descreveai_timeout">Tempo Limite (Timeout)</label></th>
+                                <td>
+                                    <input type="number" name="jinc_theme_options[descreveai_timeout]" id="descreveai_timeout" value="<?php echo esc_attr((string)$timeout); ?>" min="10" max="60" />
+                                    <p class="description">Segundos (padrão: 30, min: 10, max: 60).</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <?php submit_button(); ?>
+                </form>
             <?php endif; ?>
         </div>
         <?php

@@ -220,6 +220,34 @@ if (!function_exists('sanitize_title')) {
     }
 }
 
+if (!function_exists('esc_url_raw')) {
+    function esc_url_raw(string $url, ?array $protocols = null): string
+    {
+        return filter_var($url, FILTER_SANITIZE_URL) !== false ? filter_var($url, FILTER_SANITIZE_URL) : '';
+    }
+}
+
+if (!function_exists('absint')) {
+    function absint(mixed $maybeint): int
+    {
+        return abs((int) $maybeint);
+    }
+}
+
+if (!function_exists('checked')) {
+    function checked(mixed $checked, mixed $current = true, bool $echo = true): string
+    {
+        $result = '';
+        if ((string) $checked === (string) $current) {
+            $result = " checked='checked'";
+        }
+        if ($echo) {
+            echo $result;
+        }
+        return $result;
+    }
+}
+
 // ── WP_Error ──
 
 if (!class_exists('WP_Error')) {
@@ -435,5 +463,45 @@ if (!function_exists("wp_is_post_autosave")) {
 
 if (!defined('DAY_IN_SECONDS')) {
     define('DAY_IN_SECONDS', 86400);
+}
+
+
+if (!function_exists("is_wp_error")) {
+    function is_wp_error($thing) {
+        return ($thing instanceof WP_Error);
+    }
+}
+
+if (!function_exists("wp_remote_post")) {
+    function wp_remote_post($url, $args = array()) {
+        global $_jinc_filters;
+        if (isset($_jinc_filters["pre_http_request"])) {
+            foreach ($_jinc_filters["pre_http_request"] as $filter) {
+                $response = call_user_func($filter["callback"], false, $args, $url);
+                if ($response !== false) {
+                    return $response;
+                }
+            }
+        }
+        return new WP_Error("http_request_failed", "No mock found");
+    }
+}
+
+if (!function_exists("wp_remote_retrieve_response_code")) {
+    function wp_remote_retrieve_response_code($response) {
+        if (is_wp_error($response) || !isset($response["response"]) || !is_array($response["response"])) {
+            return "";
+        }
+        return $response["response"]["code"];
+    }
+}
+
+if (!function_exists("wp_remote_retrieve_body")) {
+    function wp_remote_retrieve_body($response) {
+        if (is_wp_error($response) || !isset($response["body"])) {
+            return "";
+        }
+        return $response["body"];
+    }
 }
 

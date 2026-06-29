@@ -138,7 +138,7 @@ class RestUploadValidatorTest extends TestCase
     }
 
     /** @test */
-    public function it_calls_descreve_ai_and_approves_upload_if_alt_is_generated(): void
+    public function it_approves_upload_and_injects_quarantine_if_ai_is_active(): void
     {
         global $_jinc_options, $_jinc_post_meta;
         $_jinc_options['jinc_theme_options'] = [
@@ -152,67 +152,15 @@ class RestUploadValidatorTest extends TestCase
         $prepared->post_mime_type = 'image/jpeg';
         $prepared->ID = 999;
         
-        $tmpName = sys_get_temp_dir() . '/dummy_upload.jpg';
-        file_put_contents($tmpName, 'dummy');
-        $_FILES['file'] = ['tmp_name' => $tmpName];
-
         $request = new \WP_REST_Request('POST', '/wp/v2/media', [
             'alt_text' => '',
         ]);
 
-        add_filter('pre_http_request', function ($preempt, $args, $url) {
-            return [
-                'headers'  => [],
-                'body'     => json_encode(["success" => true, "data" => ["description" => "Imagem descrita pela IA"]]),
-                'response' => ['code' => 200, 'message' => 'OK'],
-            ];
-        }, 10, 3);
-
         $result = $this->restValidator->validateRestInsert($prepared, $request);
-
-        unlink($tmpName);
-        unset($_FILES['file']);
 
         $this->assertInstanceOf(\stdClass::class, $result);
         $this->assertSame($prepared, $result);
-        $this->assertEquals('Imagem descrita pela IA', $_jinc_post_meta[999]['_wp_attachment_image_alt']);
-    }
-
-    /** @test */
-    public function it_blocks_upload_if_descreve_ai_timeout(): void
-    {
-        global $_jinc_options;
-        $_jinc_options['jinc_theme_options'] = [
-            'descreveai_active' => true,
-            'descreveai_endpoint' => 'https://mock.api',
-            'descreveai_api_key' => 'key',
-            'descreveai_timeout' => 15
-        ];
-
-        $prepared = new \stdClass();
-        $prepared->post_mime_type = 'image/jpeg';
-        $prepared->ID = 999;
-        
-        $tmpName = sys_get_temp_dir() . '/dummy_upload_timeout.jpg';
-        file_put_contents($tmpName, 'dummy');
-        $_FILES['file'] = ['tmp_name' => $tmpName];
-
-        $request = new \WP_REST_Request('POST', '/wp/v2/media', [
-            'alt_text' => '',
-        ]);
-
-        add_filter('pre_http_request', function ($preempt, $args, $url) {
-            return new \WP_Error('http_request_failed', 'Timeout');
-        }, 10, 3);
-
-        $result = $this->restValidator->validateRestInsert($prepared, $request);
-
-        unlink($tmpName);
-        unset($_FILES['file']);
-
-        $this->assertInstanceOf(\WP_Error::class, $result);
-        $this->assertSame('jinc_alt_text_missing', $result->get_error_code());
-        $data = $result->get_error_data();
-        $this->assertSame(403, $data['status']);
+        $this->assertEquals('[JINC: Processando IA...]', $_jinc_post_meta[999]['_wp_attachment_image_alt']);
+        $this->assertEquals('pending', $_jinc_post_meta[999]['_jinc_ai_status']);
     }
 }

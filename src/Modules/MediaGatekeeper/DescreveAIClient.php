@@ -29,10 +29,13 @@ class DescreveAIClient
         $file_contents = file_get_contents($file_path);
         $filename = basename($file_path);
         
+        $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+        $mime_type = 'image/' . ($ext === 'jpg' ? 'jpeg' : ($ext ?: 'jpeg'));
+        
         // Montagem do Payload multipart/form-data conforme RFC
         $body  = "--{$boundary}\r\n";
-        $body .= "Content-Disposition: form-data; name=\"file\"; filename=\"{$filename}\"\r\n";
-        $body .= "Content-Type: application/octet-stream\r\n\r\n";
+        $body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$filename}\"\r\n";
+        $body .= "Content-Type: {$mime_type}\r\n\r\n";
         $body .= $file_contents . "\r\n";
         $body .= "--{$boundary}--\r\n";
 
@@ -69,10 +72,15 @@ class DescreveAIClient
         $response_body = wp_remote_retrieve_body($response);
         $data = json_decode($response_body, true);
 
-        if (isset($data['success']) && $data['success'] === true && !empty($data['data']['description'])) {
+        // O backend envia: data.alt_text e data.detailed_description
+        $alt = $data['data']['alt_text'] ?? $data['data']['alt'] ?? null;
+        $desc = $data['data']['detailed_description'] ?? $data['data']['description'] ?? null;
+
+        if (isset($data['success']) && $data['success'] === true && (!empty($alt) || !empty($desc))) {
             return [
                 'success' => true,
-                'alt' => $data['data']['description'],
+                'alt' => $alt ?? $desc,
+                'description' => $desc ?? '',
                 'status_code' => 200
             ];
         }

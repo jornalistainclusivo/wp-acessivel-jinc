@@ -75,6 +75,15 @@ if (!function_exists('update_post_meta')) {
     }
 }
 
+if (!function_exists('delete_post_meta')) {
+    function delete_post_meta(int $postId, string $key, mixed $value = ''): bool
+    {
+        global $_jinc_post_meta;
+        unset($_jinc_post_meta[$postId][$key]);
+        return true;
+    }
+}
+
 // ── Post Functions ──
 
 $_jinc_posts = [];
@@ -99,6 +108,31 @@ if (!function_exists('get_edit_post_link')) {
     function get_edit_post_link(int $postId, string $context = 'display'): string|null
     {
         return '/wp-admin/post.php?post=' . $postId . '&action=edit';
+    }
+}
+
+if (!function_exists('get_attached_file')) {
+    function get_attached_file(int $attachment_id, bool $unfiltered = false): string|false
+    {
+        global $_jinc_post_meta;
+        return $_jinc_post_meta[$attachment_id]['_wp_attached_file'] ?? false;
+    }
+}
+
+if (!function_exists('wp_update_post')) {
+    function wp_update_post(array|object $postarr, bool $wp_error = false, bool $fire_after_hooks = true): int|\WP_Error
+    {
+        global $_jinc_posts;
+        $postarr = (array) $postarr;
+        $id = $postarr['ID'] ?? 0;
+        if ($id) {
+            if (!isset($_jinc_posts[$id])) {
+                $_jinc_posts[$id] = [];
+            }
+            $_jinc_posts[$id] = array_merge($_jinc_posts[$id], $postarr);
+            return $id;
+        }
+        return 0;
     }
 }
 
@@ -132,6 +166,13 @@ if (!function_exists('wp_enqueue_script')) {
     }
 }
 
+if (!function_exists('wp_localize_script')) {
+    function wp_localize_script(string $handle, string $object_name, array $l10n): bool
+    {
+        return true;
+    }
+}
+
 // ── Admin Context ──
 
 $_jinc_is_admin = false;
@@ -141,6 +182,22 @@ if (!function_exists('is_admin')) {
     {
         global $_jinc_is_admin;
         return $_jinc_is_admin;
+    }
+}
+
+// ── Nonces ──
+
+if (!function_exists('wp_create_nonce')) {
+    function wp_create_nonce(string|int $action = -1): string
+    {
+        return 'dummy_nonce';
+    }
+}
+
+if (!function_exists('wp_verify_nonce')) {
+    function wp_verify_nonce(string $nonce, string|int $action = -1): int|false
+    {
+        return $nonce === 'dummy_nonce' ? 1 : false;
     }
 }
 
@@ -245,6 +302,30 @@ if (!function_exists('checked')) {
             echo $result;
         }
         return $result;
+    }
+}
+
+// ── JSON API ──
+
+if (!function_exists('wp_send_json_success')) {
+    function wp_send_json_success(mixed $data = null, ?int $status_code = null, int $options = 0): void
+    {
+        $response = ['success' => true];
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+        echo json_encode($response);
+    }
+}
+
+if (!function_exists('wp_send_json_error')) {
+    function wp_send_json_error(mixed $data = null, ?int $status_code = null, int $options = 0): void
+    {
+        $response = ['success' => false];
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+        echo json_encode($response);
     }
 }
 

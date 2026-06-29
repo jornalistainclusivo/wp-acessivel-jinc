@@ -3,7 +3,7 @@
  * Plugin Name: WP Acessível JINC
  * Plugin URI: https://github.com/jornalistainclusivo/wp-acessivel-jinc
  * Description: WordPress plugin that enforces native accessibility (WCAG 2.2 AAA) on the DOM, with zero overlays.
- * Version: 1.0.0
+ * Version: 1.2.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: JINC Apps

@@ -17,8 +17,8 @@ class SettingsPage
     public function add_admin_menu(): void
     {
         add_options_page(
-            'WP Acessível',
-            'WP Acessível',
+            'WP Acessível JINC',
+            'WP Acessível JINC',
             'manage_options',
             'jinc-wp-acessivel',
             [$this, 'render_page']
@@ -51,9 +51,50 @@ class SettingsPage
         );
 
         add_settings_field(
+            'jinc_theme_align',
+            'Alinhamento',
+            [$this, 'render_align_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section'
+        );
+
+        add_settings_field(
             'jinc_theme_position',
             'Posição (se Flutuante)',
             [$this, 'render_position_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section'
+        );
+
+        add_settings_field(
+            'jinc_theme_bar_size',
+            'Tamanho da Barra',
+            [$this, 'render_bar_size_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section'
+        );
+
+        add_settings_field(
+            'jinc_theme_enable_shadow',
+            'Opção Sombra',
+            [$this, 'render_enable_shadow_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section'
+        );
+
+        add_settings_field(
+            'jinc_theme_frontend_title',
+            'Título da Barra',
+            [$this, 'render_text_field'],
+            'jinc-wp-acessivel',
+            'jinc_theme_main_section',
+            ['key' => 'frontend_title', 'default' => '']
+        );
+
+        add_settings_field(
+            'jinc_theme_font',
+            'Fonte',
+            [$this, 'render_font_field'],
             'jinc-wp-acessivel',
             'jinc_theme_main_section'
         );
@@ -104,17 +145,9 @@ class SettingsPage
         );
 
         add_settings_field(
-            'jinc_theme_align',
-            'Alinhamento',
-            [$this, 'render_align_field'],
-            'jinc-wp-acessivel',
-            'jinc_theme_main_section'
-        );
-
-        add_settings_field(
-            'jinc_theme_font',
-            'Fonte',
-            [$this, 'render_font_field'],
+            'jinc_theme_button_style',
+            'Estilo dos Botões',
+            [$this, 'render_button_style_field'],
             'jinc-wp-acessivel',
             'jinc_theme_main_section'
         );
@@ -125,40 +158,6 @@ class SettingsPage
             [$this, 'render_show_icons_field'],
             'jinc-wp-acessivel',
             'jinc_theme_main_section'
-        );
-
-        add_settings_field(
-            'jinc_theme_button_style',
-            'Estilo dos Botões',
-            [$this, 'render_button_style_field'],
-            'jinc-wp-acessivel',
-            'jinc_theme_main_section'
-        );
-
-        add_settings_field(
-            'jinc_theme_bar_size',
-            'Tamanho da Barra',
-            [$this, 'render_bar_size_field'],
-            'jinc-wp-acessivel',
-            'jinc_theme_main_section'
-        );
-
-        add_settings_field(
-            'jinc_theme_frontend_title',
-            'Título da Barra (Frontend)',
-            [$this, 'render_text_field'],
-            'jinc-wp-acessivel',
-            'jinc_theme_main_section',
-            ['key' => 'frontend_title', 'default' => '']
-        );
-
-        add_settings_field(
-            'jinc_theme_a11y_id',
-            'ID do Contêiner',
-            [$this, 'render_text_field'],
-            'jinc-wp-acessivel',
-            'jinc_theme_main_section',
-            ['key' => 'a11y_id', 'default' => '']
         );
     }
 
@@ -199,7 +198,7 @@ class SettingsPage
             : 'medium';
 
         $sanitized['frontend_title'] = sanitize_text_field($input['frontend_title'] ?? '');
-        $sanitized['a11y_id'] = sanitize_title($input['a11y_id'] ?? '');
+        $sanitized['enable_shadow'] = isset($input['enable_shadow']) && $input['enable_shadow'] === '1' ? '1' : '0';
 
         // DescreveAI Fields
         if (isset($input['layout'])) {
@@ -227,8 +226,8 @@ class SettingsPage
             $sanitized['show_icons'] = $existing['show_icons'] ?? '1';
             $sanitized['button_style'] = $existing['button_style'] ?? 'arredondado';
             $sanitized['bar_size'] = $existing['bar_size'] ?? 'medium';
+            $sanitized['enable_shadow'] = $existing['enable_shadow'] ?? '1';
             $sanitized['frontend_title'] = $existing['frontend_title'] ?? '';
-            $sanitized['a11y_id'] = $existing['a11y_id'] ?? '';
 
             // Sanitizar dados recebidos
             $sanitized['descreveai_active'] = isset($input['descreveai_active']) && $input['descreveai_active'] === '1' ? '1' : '0';
@@ -420,6 +419,16 @@ class SettingsPage
         $val = $options[$key] ?? $default;
         ?>
         <input type="text" class="regular-text" name="jinc_theme_options[<?php echo esc_attr($key); ?>]" value="<?php echo esc_attr($val); ?>" />
+        <?php
+    }
+
+    public function render_enable_shadow_field(): void
+    {
+        $options = get_option(self::OPTION_NAME, []);
+        $enable_shadow = isset($options['enable_shadow']) ? $options['enable_shadow'] : '1';
+        ?>
+        <input type="checkbox" name="jinc_theme_options[enable_shadow]" id="jinc_theme_enable_shadow" value="1" <?php checked($enable_shadow, '1'); ?> />
+        <label for="jinc_theme_enable_shadow">Exibir Sombra</label>
         <?php
     }
 }

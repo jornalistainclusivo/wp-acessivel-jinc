@@ -44,7 +44,7 @@ class SettingsPageTest extends TestCase
             'button_style' => 'text_only',
             'bar_size' => 'large',
             'frontend_title' => 'My Accessibility Bar',
-            'a11y_id' => 'my custom id',
+            'enable_shadow' => '1',
         ];
 
         $sanitized = $settings->sanitize_options($input);
@@ -62,7 +62,7 @@ class SettingsPageTest extends TestCase
         $this->assertEquals('text_only', $sanitized['button_style']);
         $this->assertEquals('large', $sanitized['bar_size']);
         $this->assertEquals('My Accessibility Bar', $sanitized['frontend_title']);
-        $this->assertEquals('my-custom-id', $sanitized['a11y_id']);
+        $this->assertEquals('1', $sanitized['enable_shadow']);
     }
 
     public function test_it_sanitizes_descreveai_options(): void

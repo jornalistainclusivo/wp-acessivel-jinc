@@ -53,6 +53,12 @@ class ThemeEngine
             }';
         }
 
+        if (isset($options['enable_shadow']) && $options['enable_shadow'] === '0') {
+            $custom_css .= ' .jinc-a11y-wrapper {
+                box-shadow: none !important;
+            }';
+        }
+
         wp_add_inline_style('jinc-bar-css', $custom_css);
     }
 
@@ -77,6 +83,7 @@ class ThemeEngine
             'show_icons'       => isset($options['show_icons']) ? $options['show_icons'] : '1',
             'button_style'     => $options['button_style'] ?? 'arredondado',
             'bar_size'         => $options['bar_size'] ?? 'medium',
+            'enable_shadow'    => isset($options['enable_shadow']) ? $options['enable_shadow'] : '1',
         ];
     }
 

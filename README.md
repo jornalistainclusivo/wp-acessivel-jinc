@@ -54,19 +54,20 @@ A camada de *Agentic AI* que automatiza o preenchimento semântico de textos alt
 
 **Instalação para Desenvolvimento:**
 
+Consulte a especificação [Workflow de CI/CD e Preparação para Produção (SPEC_Workflow_CICD.md)](docs/SPEC_Workflow_CICD.md) para detalhes exatos sobre como configurar o repositório sem arquivos `vendor/` e como instanciar para testes.
+
 ```bash
 # Clone o repositório
-git clone [https://github.com/SeuUsuario/wp-acessivel-jinc.git](https://github.com/SeuUsuario/wp-acessivel-jinc.git)
+git clone https://github.com/SeuUsuario/wp-acessivel-jinc.git
 
 # Acesse o diretório
 cd wp-acessivel-jinc
 
-# Instale as dependências de teste (PHPUnit)
+# Instale as dependências de teste (PHPUnit) e produção
 composer install
 
-# Crie um Symlink para o seu ambiente LocalWP/Docker
+# Crie um Symlink para o seu ambiente LocalWP/Docker (no PowerShell Admin)
 New-Item -ItemType SymbolicLink -Path "C:\Caminho\LocalWP\wp-content\plugins\wp-acessivel-jinc" -Target "C:\Caminho\Repositorio\wp-acessivel-jinc"
-
 ```
 
 ---

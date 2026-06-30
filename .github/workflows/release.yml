@@ -1,0 +1,44 @@
+name: Production Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and Package Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Verify PHP Version
+        run: php -v
+
+      - name: Composer Install (Production)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Package Plugin
+        run: |
+          mkdir -p build/wp-acessivel-jinc
+          # Usamos o git archive para respeitar o .gitattributes
+          git archive HEAD | tar -x -C build/wp-acessivel-jinc
+          # Movemos o vendor de produção gerado no passo anterior para dentro do build
+          cp -r vendor build/wp-acessivel-jinc/
+          cd build
+          zip -r wp-acessivel-jinc.zip wp-acessivel-jinc/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/wp-acessivel-jinc.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
